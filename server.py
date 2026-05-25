@@ -8,7 +8,6 @@ from typing import Optional
 
 app = FastAPI()
 
-USER_PASSWORD = os.environ.get("USER_PASSWORD", "change-me-password")
 
 bridge_ws: Optional[WebSocket] = None
 browser_clients: dict[str, WebSocket] = {}
@@ -415,21 +414,8 @@ async def bridge_endpoint(websocket: WebSocket):
 async def chat_endpoint(websocket: WebSocket):
     await websocket.accept()
 
-    try:
-        auth_data = await websocket.receive_text()
-        auth = json.loads(auth_data)
-    except Exception:
-        await websocket.close(code=4002)
-        return
-
-    if auth.get("password") != USER_PASSWORD:
-        await websocket.send_text(json.dumps({"error": "Invalid password"}))
-        await websocket.close(code=4001)
-        return
-
-    client_id = auth.get("client_id") or str(uuid.uuid4())
+    client_id = str(uuid.uuid4())
     browser_clients[client_id] = websocket
-    await websocket.send_text(json.dumps({"type": "connected", "client_id": client_id}))
 
     try:
         while True:

@@ -13,9 +13,11 @@ import websockets
 from websockets.exceptions import ConnectionClosed
 
 SERVER_URL = os.environ.get("SERVER_URL", "")
+USER_PASSWORD = os.environ.get("USER_PASSWORD", "")
 
-# Per-client session IDs so each browser tab has its own conversation history
+# Per-client session IDs and auth state
 sessions: dict[str, str] = {}
+authenticated: set[str] = {}
 
 
 def run_claude(message: str, session_id: str | None) -> tuple[str, str | None]:
@@ -46,8 +48,17 @@ def run_claude(message: str, session_id: str | None) -> tuple[str, str | None]:
 async def handle_message(ws, raw: str):
     msg = json.loads(raw)
     client_id = msg.get("client_id", "default")
-    text = msg.get("text", "").strip()
 
+    # Auth: first message from each client is the password
+    if client_id not in authenticated:
+        if msg.get("password") == USER_PASSWORD:
+            authenticated.add(client_id)
+            await ws.send(json.dumps({"client_id": client_id, "type": "connected"}))
+        else:
+            await ws.send(json.dumps({"client_id": client_id, "error": "Invalid password"}))
+        return
+
+    text = msg.get("text", "").strip()
     if not text:
         return
 
@@ -69,8 +80,12 @@ async def handle_message(ws, raw: str):
 
 async def run():
     if not SERVER_URL:
-        print("ERROR: SERVER_URL environment variable not set.")
+        print("ERROR: SERVER_URL not set. Example:")
         print("  export SERVER_URL=wss://your-app.up.railway.app/bridge")
+        sys.exit(1)
+    if not USER_PASSWORD:
+        print("ERROR: USER_PASSWORD not set. Example:")
+        print("  export USER_PASSWORD=yourpassword")
         sys.exit(1)
 
     print(f"Connecting to {SERVER_URL} ...")
