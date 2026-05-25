@@ -11,22 +11,24 @@ import sys
 
 import websockets
 from websockets.exceptions import ConnectionClosed
+from typing import Optional
 
 SERVER_URL = os.environ.get("SERVER_URL", "")
 USER_PASSWORD = os.environ.get("USER_PASSWORD", "")
 
 # Per-client session IDs and auth state
 sessions: dict[str, str] = {}
-authenticated: set[str] = {}
+authenticated: set = set()
 
 
-def run_claude(message: str, session_id: str | None) -> tuple[str, str | None]:
-    cmd = ["claude", "-p", message, "--output-format", "json"]
+def run_claude(message: str, session_id: Optional[str]) -> tuple:
+    cmd = ["claude", "-p", message, "--output-format", "json", "--dangerously-skip-permissions"]
     if session_id:
         cmd.extend(["--resume", session_id])
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120,
+                                cwd=os.path.expanduser("~"))
     except subprocess.TimeoutExpired:
         return "Request timed out after 120 seconds.", session_id
     except FileNotFoundError:
