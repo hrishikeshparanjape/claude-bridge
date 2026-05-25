@@ -28,7 +28,7 @@ def run_claude(message: str, session_id: Optional[str]) -> tuple:
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120,
-                                cwd=os.path.expanduser("~"))
+                                cwd=os.path.expanduser("~/claude"))
     except subprocess.TimeoutExpired:
         return "Request timed out after 120 seconds.", session_id
     except FileNotFoundError:
