@@ -8,7 +8,6 @@ from typing import Optional
 
 app = FastAPI()
 
-BRIDGE_SECRET = os.environ.get("BRIDGE_SECRET", "change-me-bridge-secret")
 USER_PASSWORD = os.environ.get("USER_PASSWORD", "change-me-password")
 
 bridge_ws: Optional[WebSocket] = None
@@ -394,11 +393,6 @@ async def get_ui():
 async def bridge_endpoint(websocket: WebSocket):
     global bridge_ws
     await websocket.accept()
-
-    auth = await websocket.receive_text()
-    if auth != BRIDGE_SECRET:
-        await websocket.close(code=4001, reason="Unauthorized")
-        return
 
     bridge_ws = websocket
     print("Bridge connected.")

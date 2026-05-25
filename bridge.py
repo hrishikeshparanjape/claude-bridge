@@ -13,7 +13,6 @@ import websockets
 from websockets.exceptions import ConnectionClosed
 
 SERVER_URL = os.environ.get("SERVER_URL", "")
-BRIDGE_SECRET = os.environ.get("BRIDGE_SECRET", "change-me-bridge-secret")
 
 # Per-client session IDs so each browser tab has its own conversation history
 sessions: dict[str, str] = {}
@@ -79,7 +78,6 @@ async def run():
     while True:
         try:
             async with websockets.connect(SERVER_URL, ping_interval=30, ping_timeout=10) as ws:
-                await ws.send(BRIDGE_SECRET)
                 print("Connected. Waiting for messages...")
 
                 while True:
